@@ -9,13 +9,17 @@ WORKDIR /app
 # Копіюємо конфігурації пакетів для кешування шарів Docker
 COPY package*.json ./
 
-# Встановлюємо лише продакшн-залежності
+# Встановлюємо залежності
 RUN npm ci --omit=dev
 
-# Копіюємо вихідний код
+# Копіюємо схему та генеруємо Prisma Client всередині образу
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Копіюємо решту коду
 COPY . .
 
 EXPOSE 3000
 
-# Запуск вебсервера
-CMD ["node", "src/app.js"]
+# Автоматичне застосування міграцій та старт вебсервера
+CMD ["sh", "-c", "npx prisma migrate deploy && node src/app.js"]
