@@ -1,0 +1,112 @@
+<%- include('../partials/header') %>
+
+<div style="margin-bottom: 24px;">
+    <h1 style="margin: 0;">Автоматичні правила мікроклімату</h1>
+    <p style="color: var(--text-muted); margin: 4px 0 0;">Налаштування порогових значень для самостійного спрацьовування техніки</p>
+</div>
+
+<!-- Форма створення нового правила -->
+<article>
+    <h3>Створити нове правило автопілота</h3>
+    <form action="/rules" method="POST" style="margin-top: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+
+            <div>
+                <label for="sensorId">Якщо показник датчика:</label>
+                <select id="sensorId" name="sensorId" required>
+                    <% sensors.forEach(function(sensor) { %>
+                        <option value="<%= sensor.id %>"><%= sensor.sensorType %> (<%= sensor.unit %>)</option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div>
+                <label for="conditionOperator">Умова:</label>
+                <select id="conditionOperator" name="conditionOperator" required>
+                    <option value="<">Менше ніж (&lt;)</option>
+                    <option value="<=">Менше або дорівнює (&lt;=)</option>
+                    <option value=">">Більше ніж (&gt;)</option>
+                    <option value=">=">Більше або дорівнює (&gt;=)</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="thresholdValue">Порогове число:</label>
+                <input type="number" step="0.1" id="thresholdValue" name="thresholdValue" placeholder="30.0" required>
+            </div>
+
+            <div>
+                <label for="actuatorId">Виконавчий пристрій:</label>
+                <select id="actuatorId" name="actuatorId" required>
+                    <% actuators.forEach(function(actuator) { %>
+                        <option value="<%= actuator.id %>"><%= actuator.name %></option>
+                    <% }); %>
+                </select>
+            </div>
+
+            <div>
+                <label for="actionDurationSec">Тривалість дії (сек):</label>
+                <input type="number" id="actionDurationSec" name="actionDurationSec" value="300" required>
+            </div>
+
+        </div>
+
+        <button type="submit" style="margin-top: 16px; width: auto; padding: 10px 24px;">Додати правило в систему</button>
+    </form>
+</article>
+
+<!-- Таблиця існуючих правил -->
+<h2>Активні правила теплиці</h2>
+<div class="table-container">
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Датчик контролю</th>
+            <th>Умова спрацювання</th>
+            <th>Керований пристрій</th>
+            <th>Тривалість</th>
+            <th>Статус</th>
+            <th>Дія</th>
+        </tr>
+        </thead>
+        <tbody>
+        <% if (rules.length === 0) { %>
+            <tr>
+                <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 24px;">
+                    Правил ще немає. Додайте перше правило вище.
+                </td>
+            </tr>
+        <% } %>
+        <% rules.forEach(function(rule) { %>
+            <tr>
+                <td><strong>#<%= rule.id %></strong></td>
+                <td><%= rule.sensor.sensorType %></td>
+                <td>
+            <span class="badge" style="background: #EEF2F6; font-family: 'IBM Plex Mono', monospace;">
+              <%= rule.conditionOperator %> <%= rule.thresholdValue %> <%= rule.sensor.unit %>
+            </span>
+                </td>
+                <td><strong><%= rule.actuator.name %></strong></td>
+                <td><%= rule.actionDurationSec %> с</td>
+                <td>
+                    <% if (rule.isEnabled) { %>
+                        <span class="badge badge-active">Активне</span>
+                    <% } else { %>
+                        <span class="badge badge-off">Вимкнено</span>
+                    <% } %>
+                </td>
+                <td>
+                    <form action="/rules/<%= rule.id %>/toggle" method="POST" style="margin: 0;">
+                        <button type="submit" class="logout-btn" style="padding: 4px 8px; font-size: 0.75rem;">
+                            <%= rule.isEnabled ? 'Вимкнути' : 'Увімкнути' %>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</div>
+
+<%- include('../partials/footer') %>

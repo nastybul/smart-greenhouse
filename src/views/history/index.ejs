@@ -1,0 +1,101 @@
+<%- include('../partials/header') %>
+
+<div style="margin-bottom: 24px;">
+    <h1 style="margin: 0;">Історія показників та системні логи</h1>
+    <p style="color: var(--text-muted); margin: 4px 0 0;">Архів замірів мікроклімату та повний аудит дій автоматики</p>
+</div>
+
+<!-- Фільтр датчиків -->
+<article style="padding: 16px 20px !important;">
+    <form method="GET" action="/history" style="display: flex; gap: 16px; align-items: flex-end; margin: 0; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 240px;">
+            <label for="sensorId" style="margin-bottom: 6px; font-size: 0.9rem;">Оберіть датчик для перегляду хронології:</label>
+            <select id="sensorId" name="sensorId" style="margin: 0;">
+                <% sensors.forEach(function(s) { %>
+                    <option value="<%= s.id %>" <%= Number(s.id) === selectedSensorId ? 'selected' : '' %>>
+                        <%= s.sensorType %> (<%= s.model || 'Датчик' %>) — [<%= s.unit %>]
+                    </option>
+                <% }); %>
+            </select>
+        </div>
+        <button type="submit" style="width: auto; margin: 0; padding: 10px 20px;">Завантажити історію</button>
+    </form>
+</article>
+
+<!-- Таблиця телеметрії -->
+<h2>Хронологія замірів сенсора</h2>
+<div class="table-container" style="max-height: 340px; overflow-y: auto; margin-bottom: 32px;">
+    <table>
+        <thead>
+        <tr>
+            <th>Час фіксації</th>
+            <th>Показник (Значення)</th>
+            <th>Статус</th>
+        </tr>
+        </thead>
+        <tbody>
+        <% if (readings.length === 0) { %>
+            <tr>
+                <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    Дані замірів відсутні за обраним фільтром.
+                </td>
+            </tr>
+        <% } %>
+        <% readings.forEach(function(r) { %>
+            <tr>
+                <td><%= new Date(r.recordedAt).toLocaleString('uk-UA') %></td>
+                <td>
+            <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 1.1rem;">
+              <%= r.value %>
+            </span>
+                </td>
+                <td><span class="badge badge-active">У нормі</span></td>
+            </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</div>
+
+<!-- Таблиця журналу подій (Event Logs) -->
+<h2>Журнал системного аудиту</h2>
+<div class="table-container">
+    <table>
+        <thead>
+        <tr>
+            <th>Мітка часу</th>
+            <th>Тип події</th>
+            <th>Пристрій</th>
+            <th>Опис події</th>
+        </tr>
+        </thead>
+        <tbody>
+        <% if (logs.length === 0) { %>
+            <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    Журнал подій порожній.
+                </td>
+            </tr>
+        <% } %>
+        <% logs.forEach(function(log) { %>
+            <tr>
+                <td style="white-space: nowrap; font-size: 0.85rem; color: var(--text-muted);">
+                    <%= new Date(log.createdAt).toLocaleString('uk-UA') %>
+                </td>
+                <td>
+                    <% if (log.eventType === 'COMMAND_AUTO') { %>
+                        <span class="badge badge-active">АВТОМАТИКА</span>
+                    <% } else if (log.eventType === 'COMMAND_MANUAL') { %>
+                        <span class="badge" style="background-color: #E0E7FF; color: #3730A3;">РУЧНИЙ</span>
+                    <% } else { %>
+                        <span class="badge badge-warning"><%= log.eventType %></span>
+                    <% } %>
+                </td>
+                <td><strong><%= log.actuator ? log.actuator.name : 'Система теплиці' %></strong></td>
+                <td><%= log.message %></td>
+            </tr>
+        <% }); %>
+        </tbody>
+    </table>
+</div>
+
+<%- include('../partials/footer') %>

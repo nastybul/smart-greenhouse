@@ -1,0 +1,131 @@
+<%- include('../partials/header') %>
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+        <h1 style="margin: 0;"><%= greenhouse.name %></h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0;"><%= greenhouse.location || 'Локальний тепличний комплекс' %></p>
+    </div>
+    <span class="badge badge-active" style="padding: 6px 14px;">Стан: В мережі (Online)</span>
+</div>
+
+<!-- Блок аварійних сповіщень (Alerts) -->
+<% if (alerts && alerts.length > 0) { %>
+    <% alerts.forEach(function(alert) { %>
+        <div class="alert-box">
+            <div>
+                <strong style="color: #92400E;">⚠️ <%= alert.title %>:</strong>
+                <span class="alert-message"><%= alert.message %></span>
+            </div>
+            <form action="/alerts/<%= alert.id %>/resolve" method="POST" style="margin: 0;">
+                <button type="submit" class="logout-btn" style="padding: 4px 10px; font-size: 0.8rem; background: white;">Вирішено ✓</button>
+            </form>
+        </div>
+    <% }); %>
+<% } %>
+
+<!-- Секція 1: Датчики мікроклімату у реальному часі -->
+<h2>Поточні показники мікроклімату</h2>
+<div class="sensors-grid">
+
+    <!-- Температура повітря -->
+    <div class="sensor-card">
+        <div class="sensor-header">
+            <span class="sensor-title">Температура</span>
+            <span class="sensor-icon">🌡️</span>
+        </div>
+        <div class="sensor-value-box">
+            <span class="sensor-value"><%= telemetry.airTemp ? telemetry.airTemp.value : '--' %></span>
+            <span class="sensor-unit"><%= telemetry.airTemp ? telemetry.airTemp.unit : '°C' %></span>
+        </div>
+        <div class="sensor-footer">Норма: 20°C - 26°C</div>
+    </div>
+
+    <!-- Вологість повітря -->
+    <div class="sensor-card">
+        <div class="sensor-header">
+            <span class="sensor-title">Вологість повітря</span>
+            <span class="sensor-icon">💧</span>
+        </div>
+        <div class="sensor-value-box">
+            <span class="sensor-value"><%= telemetry.airHumidity ? telemetry.airHumidity.value : '--' %></span>
+            <span class="sensor-unit"><%= telemetry.airHumidity ? telemetry.airHumidity.unit : '%' %></span>
+        </div>
+        <div class="sensor-footer">Оптимально: 60% - 75%</div>
+    </div>
+
+    <!-- Вологість ґрунту -->
+    <div class="sensor-card">
+        <div class="sensor-header">
+            <span class="sensor-title">Вологість ґрунту</span>
+            <span class="sensor-icon">🪴</span>
+        </div>
+        <div class="sensor-value-box">
+            <span class="sensor-value"><%= telemetry.soilMoisture ? telemetry.soilMoisture.value : '--' %></span>
+            <span class="sensor-unit"><%= telemetry.soilMoisture ? telemetry.soilMoisture.unit : '%' %></span>
+        </div>
+        <div class="sensor-footer">Поріг поливу: &lt; 30%</div>
+    </div>
+
+    <!-- Рівень освітленості -->
+    <div class="sensor-card">
+        <div class="sensor-header">
+            <span class="sensor-title">Освітленість</span>
+            <span class="sensor-icon">☀️</span>
+        </div>
+        <div class="sensor-value-box">
+            <span class="sensor-value"><%= telemetry.lightLevel ? Math.round(telemetry.lightLevel.value) : '--' %></span>
+            <span class="sensor-unit"><%= telemetry.lightLevel ? telemetry.lightLevel.unit : 'Lux' %></span>
+        </div>
+        <div class="sensor-footer">Рекомендовано: &gt; 8000 Lux</div>
+    </div>
+
+</div>
+
+<!-- Секція 2: Керування обладнанням (Транзакційні кнопки) -->
+<h2 style="margin-top: 32px;">Керування виконавчими пристроями</h2>
+<div class="actuators-grid">
+    <% actuators.forEach(function(actuator) { %>
+        <div class="actuator-card">
+            <div class="actuator-top">
+                <div>
+                    <h3 class="actuator-name"><%= actuator.name %></h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 4px 0 0;">
+                        Тип: <%= actuator.actuatorType %>
+                    </p>
+                </div>
+                <div>
+                    <% if (actuator.status === 'ON') { %>
+                        <span class="badge badge-active">УВІМКНЕНО</span>
+                    <% } else { %>
+                        <span class="badge badge-off">ВИМКНЕНО</span>
+                    <% } %>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                <!-- Перемикач режиму AUTO / MANUAL -->
+                <form action="/actuators/<%= actuator.id %>/mode" method="POST" style="margin: 0;">
+                    <input type="hidden" name="mode" value="<%= actuator.controlMode === 'AUTO' ? 'MANUAL' : 'AUTO' %>">
+                    <button type="submit" class="logout-btn" style="font-size: 0.8rem; background: #F8FAFC;">
+                        Режим: <strong><%= actuator.controlMode === 'AUTO' ? 'Автомат' : 'Ручний' %></strong>
+                    </button>
+                </form>
+
+                <!-- Кнопка миттєвого перемикання живлення (Транзакція) -->
+                <form action="/actuators/<%= actuator.id %>/toggle" method="POST" style="margin: 0;">
+                    <% if (actuator.status === 'ON') { %>
+                        <button type="submit" style="background-color: var(--danger-color); padding: 8px 16px; font-size: 0.9rem; margin: 0; width: auto;">
+                            Вимкнути
+                        </button>
+                    <% } else { %>
+                        <button type="submit" style="background-color: var(--primary-green); padding: 8px 16px; font-size: 0.9rem; margin: 0; width: auto;">
+                            Увімкнути
+                        </button>
+                    <% } %>
+                </form>
+            </div>
+        </div>
+    <% }); %>
+</div>
+
+<%- include('../partials/footer') %>
