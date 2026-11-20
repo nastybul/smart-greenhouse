@@ -47,6 +47,10 @@ body {
     flex-direction: column;
     min-height: 100vh;
 }
+.badge-warning {
+    background-color: #FCA5A5;
+    color: #991B1B;
+}
 
 .error-banner {
     background-color: #FEF2F2;
