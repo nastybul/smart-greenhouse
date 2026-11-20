@@ -79,7 +79,7 @@
         <% logs.forEach(function(log) { %>
             <tr>
                 <td style="white-space: nowrap; font-size: 0.85rem; color: var(--text-muted);">
-                    <%= new Date(log.createdAt).toLocaleString('uk-UA') %>
+                    <%= new Date(log.createdAt).toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' }) %>
                 </td>
                 <td>
                     <% if (log.eventType === 'COMMAND_AUTO') { %>
